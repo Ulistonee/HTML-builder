@@ -33,8 +33,6 @@ fs.mkdir(outputFolder, { recursive: true }, (err) => {
         readStream.on('error', (err) => {
           console.error(`Error reading file ${file.name}:`, err.message);
         });
-      } else if (!file.isFile()) {
-        console.log(`Skipping directory: ${file.name}`);
       } else {
         console.log(`Skipping non-CSS file: ${file.name}`);
       }
