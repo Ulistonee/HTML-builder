@@ -24,8 +24,6 @@ fs.readdir(secretFolderPath, { withFileTypes: true }, (err, files) => {
 
         console.log(`${name} - ${ext.slice(1)} - ${sizeInKB.toFixed(3)}kb`);
       });
-    } else {
-      console.error(`Error: "${file.name}" is not a file.`);
     }
   });
 });
