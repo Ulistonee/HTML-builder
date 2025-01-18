@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const copyDir = require('./copy-dir');
 
 const projectDist = path.join(__dirname, 'project-dist');
 const templateFile = path.join(__dirname, 'template.html');
@@ -9,51 +10,6 @@ const assetsDir = path.join(__dirname, 'assets');
 const outputHtml = path.join(projectDist, 'index.html');
 const outputCss = path.join(projectDist, 'style.css');
 const outputAssets = path.join(projectDist, 'assets');
-
-function copyDir(srcDir, destDir) {
-  fs.mkdir(destDir, { recursive: true }, (err) => {
-    if (err) {
-      console.error('Error creating directory:', err.message);
-      return;
-    }
-
-    fs.readdir(srcDir, { withFileTypes: true }, (err, entries) => {
-      if (err) {
-        console.error('Error reading directory:', err.message);
-        return;
-      }
-
-      fs.readdir(destDir, { withFileTypes: true }, (err, destEntries) => {
-        if (err)
-          return console.error(
-            'Error reading destination directory:',
-            err.message,
-          );
-        destEntries.forEach((entry) => {
-          const destPath = path.join(destDir, entry.name);
-          fs.rm(destPath, { recursive: true, force: true }, (err) => {
-            if (err) console.error('Error removing old file:', err.message);
-          });
-        });
-
-        entries.forEach((entry) => {
-          const srcPath = path.join(srcDir, entry.name);
-          const destPath = path.join(destDir, entry.name);
-
-          if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-          } else if (entry.isFile()) {
-            fs.copyFile(srcPath, destPath, (err) => {
-              if (err) {
-                console.error('Error copying file:', err.message);
-              }
-            });
-          }
-        });
-      });
-    });
-  });
-}
 
 function processTemplate(templateContent, callback) {
   const templateTags = templateContent.match(/{{\s*[\w-]+\s*}}/g) || [];
@@ -142,5 +98,5 @@ fs.mkdir(projectDist, { recursive: true }, (err) => {
     });
   });
 
-  copyDir(assetsDir, outputAssets);
+  void copyDir.copyDir(assetsDir, outputAssets);
 });
