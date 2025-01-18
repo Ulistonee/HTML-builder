@@ -133,5 +133,5 @@ fs.mkdir(projectDist, { recursive: true }, (err) => {
     });
   });
 
-  void copyDir.copyDir(assetsDir, outputAssets);
+  void copyDir(assetsDir, outputAssets);
 });
