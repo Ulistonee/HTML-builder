@@ -1,6 +1,41 @@
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
-const copyDir = require('./copy-dir');
+
+const copyDir = async (srcDir, destDir) => {
+  let isExist;
+  try {
+    await fsPromises.access(destDir, fsPromises.constants.F_OK);
+    isExist = true;
+  } catch (err) {
+    isExist = false;
+  }
+  if (isExist) {
+    await fsPromises
+        .rm(destDir, { recursive: true, force: true })
+        .catch((err) => console.log(err));
+  }
+  await fsPromises
+      .mkdir(destDir, { recursive: true })
+      .catch((err) => console.error('Error creating directory:', err.message));
+  const entries = await fsPromises
+      .readdir(srcDir, { withFileTypes: true })
+      .catch((err) => console.error('Error reading directory:', err.message));
+  await Promise.all(
+      entries.map(async (entry) => {
+        const srcPath = path.join(srcDir, entry.name);
+        const destPath = path.join(destDir, entry.name);
+
+        if (entry.isDirectory()) {
+          await copyDir(srcPath, destPath);
+        } else if (entry.isFile()) {
+          await fsPromises
+              .copyFile(srcPath, destPath)
+              .catch((err) => console.error('Error copying file:', err.message));
+        }
+      }),
+  );
+};
 
 const projectDist = path.join(__dirname, 'project-dist');
 const templateFile = path.join(__dirname, 'template.html');
