@@ -8,8 +8,7 @@ readStream.on('data', (chunk) => {
   console.log(chunk);
 });
 
-readStream.on('end', () => {
-});
+readStream.on('end', () => {});
 
 readStream.on('error', (err) => {
   console.error('Произошла ошибка при чтении файла:', err.message);

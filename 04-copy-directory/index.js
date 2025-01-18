@@ -1,52 +1,41 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 
-function copyDir(srcDir, destDir) {
-  fs.mkdir(destDir, { recursive: true }, (err) => {
-    if (err) {
-      console.error('Error creating directory:', err.message);
-      return;
-    }
+async function copyDir(srcDir, destDir) {
+  let isExist;
+  try {
+    await fs.access(destDir, fs.constants.F_OK);
+    isExist = true;
+  } catch (err) {
+    isExist = false;
+  }
+  if (isExist) {
+    await fs
+      .rm(destDir, { recursive: true, force: true })
+      .catch((err) => console.log(err));
+  }
+  await fs
+    .mkdir(destDir, { recursive: true })
+    .catch((err) => console.error('Error creating directory:', err.message));
+  const entries = await fs
+    .readdir(srcDir, { withFileTypes: true })
+    .catch((err) => console.error('Error reading directory:', err.message));
+  await Promise.all(
+    entries.map(async (entry) => {
+      const srcPath = path.join(srcDir, entry.name);
+      const destPath = path.join(destDir, entry.name);
 
-    fs.readdir(srcDir, { withFileTypes: true }, (err, entries) => {
-      if (err) {
-        console.error('Error reading directory:', err.message);
-        return;
+      if (entry.isDirectory()) {
+        await copyDir(srcPath, destPath);
+      } else if (entry.isFile()) {
+        await fs
+          .copyFile(srcPath, destPath)
+          .catch((err) => console.error('Error copying file:', err.message));
       }
-
-      fs.readdir(destDir, { withFileTypes: true }, (err, destEntries) => {
-        if (err)
-          return console.error(
-            'Error reading destination directory:',
-            err.message,
-          );
-        destEntries.forEach((entry) => {
-          const destPath = path.join(destDir, entry.name);
-          fs.rm(destPath, { recursive: true, force: true }, (err) => {
-            if (err) console.error('Error removing old file:', err.message);
-          });
-        });
-
-        entries.forEach((entry) => {
-          const srcPath = path.join(srcDir, entry.name);
-          const destPath = path.join(destDir, entry.name);
-
-          if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-          } else if (entry.isFile()) {
-            fs.copyFile(srcPath, destPath, (err) => {
-              if (err) {
-                console.error('Error copying file:', err.message);
-              }
-            });
-          }
-        });
-      });
-    });
-  });
+    }),
+  );
 }
-
 const srcDir = path.join(__dirname, 'files');
 const destDir = path.join(__dirname, 'files-copy');
 
-copyDir(srcDir, destDir);
+void copyDir(srcDir, destDir);
